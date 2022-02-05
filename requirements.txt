@@ -4,6 +4,10 @@ setuptools>=26
 twine
 wheel>=0.29
 
+# file manipulation
+os
+shutil
+
 # data science
 numpy
 pandas
@@ -27,3 +31,7 @@ six>=1.14
 joblib
 memoized-property
 termcolor
+
+# Image manipulation
+opencv-python
+PIL
