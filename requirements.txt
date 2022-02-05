@@ -5,8 +5,8 @@ twine
 wheel>=0.29
 
 # file manipulation
-os
-shutil
+#os
+# shutil
 
 # data science
 numpy
@@ -34,4 +34,4 @@ termcolor
 
 # Image manipulation
 opencv-python
-PIL
+pillow
