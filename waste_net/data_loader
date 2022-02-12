@@ -1,0 +1,87 @@
+import imp
+
+
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.utils import load_img
+
+class CustomDataGen(tf.keras.utils.Sequence):
+
+    def __init__(self, df, X_path_col, y_col, label_col, nb_labels,
+                 batch_size,
+                 shuffle=True):
+
+        self.df = df.copy()
+        self.df.reset_index(inplace=True)
+        self.X_path_col = X_path_col
+        self.y_col = y_col
+        self.label_col = label_col
+        self.nb_labels = nb_labels
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+        self.n = len(self.df)
+
+        self.df["batch_num"] = self.df.index // self.batch_size
+
+        self.n_batches = self.n//self.batch_size
+        if not self.n % self.batch_size ==0:
+            self.n_batches +=1
+
+        print(f'Found {self.n} files')
+
+
+    def __getitem__(self, index):
+        '''
+        Function to get a specific batch
+        '''
+
+        df_batch = self.df.loc[self.df.batch_num == index]
+        X_batch,y_batch = self.load_images_from_batch(df_batch)
+
+        return X_batch, y_batch
+
+
+    def on_epoch_end(self):
+        '''
+        called function by .fit at the end of an epoch
+        could implement scheduled task depending of the epoch
+        '''
+        self.df = self.df.sample(frac=1).reset_index(drop=True)
+
+        self.n_batches = self.n//self.batch_size
+        if not self.n % self.batch_size ==0:
+            self.n_batches +=1
+
+    def load_images_from_batch(self,df_batch):
+
+        l_img = []
+        l_y = []
+
+        for idx, data in df_batch.iterrows():
+            #Build X
+            X = load_img(data[self.X_path_col])
+            l_img.append(np.array(X)/255)
+
+
+            #BUILD Y
+            y = load_img(data[self.y_col])
+            y = np.array(tf.image.rgb_to_grayscale(y))/255
+            y[y>0.5]=1
+            y[y<=0.5]=0
+
+            mask=np.zeros((y.shape[0], y.shape[1], self.nb_labels))
+
+            mask[:,:,data[self.label_col]] = y[:,:,0]
+
+
+            l_y.append(y)
+
+
+        return np.stack(l_img), np.stack(l_y)
+
+
+    def __len__(self):
+        '''
+        number of batches to iterate
+        '''
+        return int(self.n_batches)
