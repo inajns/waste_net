@@ -92,8 +92,8 @@ def cropping(df, input_folder, destination_folder):
             cropped_resized_mask = mask.resize((128, 128))
 
             # Saves the image/mask
-            cropped_resized_image.save(f'images/Cropped_image/{i}.jpeg')
-            cropped_resized_mask.save(f'images/Cropped_mask/{i}.jpg')
+            cropped_resized_image.save(f'{destination_folder}/Cropped_image/{i}.jpeg')
+            cropped_resized_mask.save(f'{destination_folder}/Cropped_mask/{i}.jpg')
 
         l_img_paths.append(f'{destination_folder}/Cropped_image/{i}.jpeg')
         l_mask_paths.append(f'{destination_folder}/Cropped_mask/{i}.jpg')
