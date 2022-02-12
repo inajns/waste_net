@@ -30,7 +30,7 @@ def copyFiles(input_folder, destination_folder, anns):
                     shutil.move(os.path.join(destination_folder, file),os.path.join(destination_folder, f"{img['id']}.jpg"))
 
 
-def create_taco_df(input_folder, anns_name, cropped_df):
+def create_taco_df(input_folder, anns_name):
 
     with open(os.path.join(input_folder, anns_name), 'r') as f:
         dataset = json.loads(f.read())
@@ -54,8 +54,6 @@ def create_taco_df(input_folder, anns_name, cropped_df):
         images[["id", "width", "height", "file_name"]],
         left_on="image_id",
         right_on="id").drop(columns="id")
-
-    df = df.merge(cropped_df, on ="ann_id")
 
     return df
 
