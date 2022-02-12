@@ -1,189 +1,170 @@
-import tensorflow as tf
-import tensorflow.keras as keras
-from keras import Input, Model
-from keras.layers import Conv2D, MaxPooling2D, Dropout, UpSampling2D, Concatenate
-from keras.optimizer_v2 import adam
+from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D
+from tensorflow.keras import Model
+from tensorflow import concat
+from tensorflow.keras.optimizers import Adam
 
-def unet(input_size=(256, 256, 3)):
 
-    inputs = Input(input_size)
+def vgg16_unet(input_shape=(128, 128, 3)):
 
-    # 1st down block
-    conv1 = Conv2D(64,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(inputs)
+    # Block 1
+    img_input = Input(shape=input_shape)
 
-    conv1 = Conv2D(64,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(conv1)
+    block1_conv1 = Conv2D(64, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block1_conv1")(img_input)
+    block1_conv2 = Conv2D(64, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block1_conv2")(block1_conv1)
+    block1_pool = MaxPooling2D((2, 2), strides=(2, 2),
+                               name="block1_pool")(block1_conv2)
 
-    pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
+    # Block 2
+    block2_conv1 = Conv2D(128, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block2_conv1")(block1_pool)
+    block2_conv2 = Conv2D(128, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block2_conv2")(block2_conv1)
+    block2_pool = MaxPooling2D((2, 2), strides=(2, 2),
+                               name="block2_pool")(block2_conv2)
 
-    # 2nd block
-    conv2 = Conv2D(128,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(pool1)
+    # Block 3
+    block3_conv1 = Conv2D(256, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block3_conv1")(block2_pool)
+    block3_conv2 = Conv2D(256, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block3_conv2")(block3_conv1)
+    block3_conv3 = Conv2D(256, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block3_conv3")(block3_conv2)
+    block3_pool = MaxPooling2D((2, 2), strides=(2, 2),
+                               name="block3_pool")(block3_conv3)
 
-    conv2 = Conv2D(128,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(conv2)
+    # Block 4
+    block4_conv1 = Conv2D(512, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block4_conv1")(block3_pool)
+    block4_conv2 = Conv2D(512, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block4_conv2")(block4_conv1)
+    block4_conv3 = Conv2D(512, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block4_conv3")(block4_conv2)
+    block4_pool = MaxPooling2D((2, 2), strides=(2, 2),
+                               name="block4_pool")(block4_conv3)
 
-    pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
+    # Block 5
+    block5_conv1 = Conv2D(512, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block5_conv1")(block4_pool)
+    block5_conv2 = Conv2D(512, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block5_conv2")(block5_conv1)
+    block5_conv3 = Conv2D(512, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block5_conv3")(block5_conv2)
+    block5_pool = MaxPooling2D((2, 2), strides=(2, 2),
+                               name='block5_pool')(block5_conv3)
 
-    # 3rd block
-    conv3 = Conv2D(256,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(pool2)
+    # Espace latent
+    #block5_global_pool = GlobalAveragePooling2D(keepdims=True)(block5_pool)
 
-    conv3 = Conv2D(256,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(conv3)
+    # Block 6
+    block6_conv1 = Conv2D(512, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block6_conv1")(
+                              UpSampling2D(size=(2, 2))(block5_pool))
+    #block6_conv1 = Conv2D(512, (3, 3), activation='relu', padding='same', name="block6_conv2")(UpSampling2D(size = (2,2))(block5_global_pool))
+    #block6_conv1 = Conv2D(512, (3, 3), activation='relu', padding='same', name="block6_conv1")(UpSampling2D(size = (2,2))(block5_global_pool))
+    #block6_conv1 = Conv2D(512, (3, 3), activation='relu', padding='same', name="block6_conv1")(UpSampling2D(size = (2,2))(block5_global_pool))
+    block6_merge = concat([block5_conv3, block6_conv1], 3)
+    block6_conv2 = Conv2D(512, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block6_conv2")(block6_merge)
+    block6_conv3 = Conv2D(512, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block6_conv3")(block6_conv2)
 
-    pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
+    # Block 7
+    block7_conv1 = Conv2D(512, (2, 2),
+                          activation='relu',
+                          padding='same',
+                          name="block7_conv1")(
+                              UpSampling2D(size=(2, 2))(block6_conv3))
+    block7_merge = concat([block4_conv3, block7_conv1], 3)
+    block7_conv2 = Conv2D(512, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block7_conv2")(block7_merge)
+    block7_conv3 = Conv2D(512, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block7_conv3")(block7_conv2)
 
-    # 4th block
-    conv4 = Conv2D(512,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(pool3)
+    # Block 8
+    block8_conv1 = Conv2D(256, (2, 2),
+                          activation='relu',
+                          padding='same',
+                          name="block8_conv1")(
+                              UpSampling2D(size=(2, 2))(block7_conv3))
+    block8_merge = concat([block3_conv3, block8_conv1], 3)
+    block8_conv2 = Conv2D(256, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block8_conv2")(block8_merge)
+    block8_conv3 = Conv2D(256, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block8_conv3")(block8_conv2)
 
-    conv4 = Conv2D(512,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(conv4)
+    # Block 9
+    block9_conv1 = Conv2D(128, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block9_conv1")(
+                              UpSampling2D(size=(2, 2))(block8_conv3))
+    block9_merge = concat([block2_conv2, block9_conv1], 3)
+    block9_conv2 = Conv2D(128, (3, 3),
+                          activation='relu',
+                          padding='same',
+                          name="block9_conv2")(block9_merge)
 
-    drop4 = Dropout(0.5)(conv4)
+    # Block 10
+    block10_conv1 = Conv2D(64, (3, 3),
+                           activation='relu',
+                           padding='same',
+                           name="block10_conv1")(
+                               UpSampling2D(size=(2, 2))(block9_conv2))
+    block10_merge = concat([block1_conv2, block10_conv1], 3)
+    block10_conv2 = Conv2D(64, (3, 3),
+                           activation='relu',
+                           padding='same',
+                           name="block10_conv2")(block10_merge)
 
-    pool4 = MaxPooling2D(pool_size=(2, 2))(drop4)
+    # Block 11
+    output = Conv2D(4, 1, activation="sigmoid")(block10_conv2)
 
-    # 5th block
-    conv5 = Conv2D(1024,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(pool4)
+    model = Model(inputs=img_input, outputs=output)
 
-    conv5 = Conv2D(1024,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(conv5)
+    model.compile(optimizer=Adam(learning_rate=1e-04),
+                  loss="binary_crossentropy",
+                  metrics=["accuracy"])
 
-    drop5 = Dropout(0.5)(conv5)
-
-    # 1st up block
-    up6 = Conv2D(512,
-                 2,
-                 activation='relu',
-                 padding='same',
-                 kernel_initializer='he_normal')(UpSampling2D(size=(2,2))(drop5))
-
-    merge6 = Concatenate([drop4, up6], axis=3)
-
-    conv6 = Conv2D(512,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(merge6)
-
-    conv6 = Conv2D(512,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(conv6)
-
-    # 2nd up block
-    up7 = Conv2D(256,
-                 2,
-                 activation='relu',
-                 padding='same',
-                 kernel_initializer='he_normal')(UpSampling2D(size=(2,2))(conv6))
-
-    merge7 = Concatenate([conv3, up7], axis=3)
-
-    conv7 = Conv2D(256,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(merge7)
-
-    conv7 = Conv2D(256,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(conv7)
-
-    # 3rd up block
-    up8 = Conv2D(128,
-                 2,
-                 activation='relu',
-                 padding='same',
-                 kernel_initializer='he_normal')(UpSampling2D(size=(2,2))(conv7))
-
-    merge8 = Concatenate([conv2, up8], axis=3)
-
-    conv8 = Conv2D(128,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(merge8)
-
-    conv8 = Conv2D(128,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(conv8)
-
-    # 4th up block
-    up9 = Conv2D(64,
-                 2,
-                 activation='relu',
-                 padding='same',
-                 kernel_initializer='he_normal')(UpSampling2D(size=(2,2))(conv8))
-
-    merge9 = Concatenate([conv1, up9], axis=3)
-
-    conv9 = Conv2D(64,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(merge9)
-
-    conv9 = Conv2D(64,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(conv9)
-
-    conv9 = Conv2D(2,
-                   3,
-                   activation='relu',
-                   padding='same',
-                   kernel_initializer='he_normal')(conv9)
-
-    # 5th up block
-    conv10 = Conv2D(4, 1, activation='sigmoid')(conv9)
-
-    model = Model(inputs=inputs, outputs=conv10)
-
-    model.compile(optimizer=adam(learning_rate=1e-4),
-                  loss='binary_crossentropy',
-                  metrics=['accuracy'])
-
-    #model.summary()
-    
     return model
