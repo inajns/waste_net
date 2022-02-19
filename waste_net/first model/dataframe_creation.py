@@ -25,12 +25,14 @@ for i in range(len(annotations['annotations'])):
         img_id = annotations["annotations"][i]['image_id']
         bbox = annotations['annotations'][i]['bbox']
         label = 'Plastic'
+        area = annotations['annotations'][i]['area']
 
         img_details = []
 
         img_details.append(img_id)
         img_details.append(bbox)
         img_details.append(label)
+        img_details.append(area)
 
         images.append(img_details)
 
@@ -39,12 +41,14 @@ for i in range(len(annotations['annotations'])):
         img_id = annotations["annotations"][i]['image_id']
         bbox = annotations['annotations'][i]['bbox']
         label = 'Glass'
+        area = annotations['annotations'][i]['area']
 
         img_details = []
 
         img_details.append(img_id)
         img_details.append(bbox)
         img_details.append(label)
+        img_details.append(area)
 
         images.append(img_details)
 
@@ -52,12 +56,14 @@ for i in range(len(annotations['annotations'])):
         img_id = annotations["annotations"][i]['image_id']
         bbox = annotations['annotations'][i]['bbox']
         label = 'Carton'
+        area = annotations['annotations'][i]['area']
 
         img_details = []
 
         img_details.append(img_id)
         img_details.append(bbox)
         img_details.append(label)
+        img_details.append(area)
 
         images.append(img_details)
 
@@ -65,15 +71,16 @@ for i in range(len(annotations['annotations'])):
         img_id = annotations["annotations"][i]['image_id']
         bbox = annotations['annotations'][i]['bbox']
         label = 'Other'
+        area = annotations['annotations'][i]['area']
 
         img_details = []
 
         img_details.append(img_id)
         img_details.append(bbox)
         img_details.append(label)
+        img_details.append(area)
 
         images.append(img_details)
-
 
 # Create the final DataFrame
 df = pd.DataFrame()
@@ -93,23 +100,28 @@ df.set_index('image_id')
 # Merge by image_id
 d = {}
 
-for i, box, label in images:
+for i, box, label, area in images:
     if i not in d:
         d[i] = [[], []]
         d[i][0].append(box)
         d[i][1].append(label)
+        d[i][2].append(area)
+
 
     else:
         d[i][0].append(box)
         d[i][1].append(label)
+        d[i][2].append(area)
 
 d_new = {
     'bbox': [d[i][0] for i in d.keys()],
-    'labels': [d[i][1] for i in d.keys()]
+    'labels': [d[i][1] for i in d.keys()],
+    'area': [d[i][2] for i in d.keys()]
 }
 
 df['bbox'] = d_new['bbox']
 df['labels'] = d_new['labels']
+df['area'] = d_new['area']
 
 
 #Get the file_name_path
